@@ -1,0 +1,37 @@
+ul.wvg-gallery-images {
+	display: block;
+	float: left;
+	width: 100%;
+	clear: both;
+}
+
+ul.wvg-gallery-images li {
+	width: 80px;
+	float: left;
+	border: 1px solid #d5d5d5;
+	margin: 9px 9px 0 0;
+	background: #f7f7f7;
+	border-radius: 2px;
+	position: relative;
+	box-sizing: border-box;
+	cursor: pointer;
+}
+
+ul.wvg-gallery-images li img {
+	max-width: 100%;
+}
+
+ul.wvg-gallery-images li:hover:after {
+	font-family: Dashicons;
+	content: "\f153";
+	display: block;
+	position: absolute;
+	width: 20px;
+	height: 20px;
+	top: -10px;
+	right: -10px;
+	line-height: 20px;
+	font-size: 20px;
+	text-align: center;
+	color: red;
+}
