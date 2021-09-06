@@ -44,27 +44,34 @@ if ( !function_exists('wvg_wc_needed_notice') ) {
 
 if ( !function_exists('wvg_variation_settings_fields') ) {
 	function wvg_variation_settings_fields($loop, $variation_data, $variation) {
-		echo '<div class="options_group wvg-gallery">';
+		echo 
+"	<div class=\"options_group wvg-gallery\">
+		<label>Additional images</label>";
 		woocommerce_wp_hidden_input( 
 			array( 
-				'id'          => '_wvg_gallery[' . $variation->ID . ']',
-				'name' => '_wvg_gallery[' . $variation->ID . ']',
-				'value'       => get_post_meta( $variation->ID, '_wvg_gallery', true )
+				'id'		=> '_wvg_gallery[' . $variation->ID . ']',
+				'name'		=> '_wvg_gallery[' . $variation->ID . ']',
+				'value'		=> get_post_meta( $variation->ID, '_wvg_gallery', true )
 			)
 		);
-		echo '<ul class="wvg-gallery-images">';
+		echo
+"			<ul class=\"wvg-gallery-images\">";
 		$images = get_post_meta( $variation->ID, '_wvg_gallery', true );
 		if ($images) {
 			$images = explode(';', $images);
 			foreach ($images as $image) {
 				if (!empty($image)) {
 					$src = wp_get_attachment_image_src($image, 'thumbnail');
-					echo '<li data-id="'.$image.'"><img src="'.$src[0].'"></li>';
+					echo
+"				<li data-id=\"{$image}\"><img src=\"{$src[0]}'\"></li>";
 				}
 			}
 		}
-		echo '</ul>';
-		echo '<p><a href="#" class="button-primary wvg-gallery-add-button">'.__('Add Variation Images', 'woocommerce-variation-gallery').'</a></p></div>';
+		echo
+"			</ul>";
+		echo
+"			<a href=\"#\" class=\"button-primary wvg-gallery-add-button\">".__('Add Variation Images', 'woocommerce-variation-gallery')."</a>
+	</div>";
 	}
 }
 
@@ -83,40 +90,49 @@ add_action( 'wp_ajax_nopriv_wvg_change_images', 'wvg_change_images' );
 if (!function_exists('wvg_change_images')) {
 	function wvg_change_images() {
 		if ($_POST['variation']) {
-			global $woocommerce;
+
+			//get variation product from post data
 			$variation_id = (int) $_POST['variation'];
-			$variation = wc_get_product($variation_id);
-			$parent = $variation->get_parent_id();
-			$parent = wc_get_product($parent);
-			if (get_post_meta($variation_id, '_wvg_gallery', true)) {
-				$gallery_ids = get_post_meta($variation_id, '_wvg_gallery', true);
+			$variation = wc_get_product($variation_id);		
+
+			//get main image id
+			$image = $variation->get_image_id();
+
+			//get additional images ids
+			if ($gallery_ids = get_post_meta($variation_id, '_wvg_gallery', true)) {
+				// $gallery_ids = get_post_meta($variation_id, '_wvg_gallery', true);
 				$gallery_ids = explode(';', $gallery_ids);
 			} else {
+				$parent = $variation->get_parent_id();
+				$parent = wc_get_product($parent);
 				$gallery_ids = $parent->get_gallery_image_ids();
 			}
-			$result = '';
-			//get variation main image
-			$image = $variation->get_image_id();
-			//NEW WAY
 
-			$columns           = apply_filters( 'woocommerce_product_thumbnails_columns', 4 );
-			$post_thumbnail_id = $variation->get_image_id();
-			$wrapper_classes   = array(
-				'woocommerce-product-gallery',
-				'images'
-			);
-			$result .= '<div class="'.esc_attr( implode( ' ', array_map( 'sanitize_html_class', $wrapper_classes ) ) ).'" data-columns="'.esc_attr( $columns ).'" style="opacity: 0; transition: opacity .25s ease-in-out;">
-				<figure class="woocommerce-product-gallery__wrapper">';
-			$html  = wc_get_gallery_image_html( $post_thumbnail_id, true );
-			$result .= apply_filters( 'woocommerce_single_product_image_thumbnail_html', $html, $post_thumbnail_id );
-			error_log(print_r($gallery_ids, true));
-			foreach ( $gallery_ids as $attachment_id ) {
-				if (!empty($attachment_id)) {
-					$result .= apply_filters( 'woocommerce_single_product_image_thumbnail_html', wc_get_gallery_image_html( $attachment_id  ), $attachment_id );
-				}
-			}
-			$result .= '</figure></div>';
-			echo $result;
+			ob_start();
+			?>
+			<div class="woocommerce-product-gallery images">
+				<figure class="woocommerce-product-gallery__wrapper">
+					<?php
+					if ( $image ) {
+						echo wc_get_gallery_image_html( $image, true );
+					}
+					if ( $gallery_ids ) {
+						foreach ( $gallery_ids as $gallery_id ) {
+							
+							echo apply_filters( 'woocommerce_single_product_image_thumbnail_html', wc_get_gallery_image_html( $gallery_id ), $gallery_id );
+							// phpcs:disable WordPress.XSS.EscapeOutput.OutputNotEscaped
+						}
+					}
+					?>
+
+
+				</figure>
+			</div>
+			<?php
+			$output = ob_get_contents();
+			ob_end_clean();
+			
+			echo $output;
 			wp_die();
 		} else {
 			echo 'error';

@@ -3,7 +3,7 @@ jQuery(document).ready(function($) {
 
     $(document).on('click', '.wvg-gallery-add-button', function(event){
         event.preventDefault ? event.preventDefault() : (event.returnValue = false);
-    	var gallery = $(this).parent('p').parent('div');
+    	var gallery = $(this).parent('div');
 
         meta_image_frame = wp.media.frames.meta_image_frame = wp.media({
             title: 'Choose image(s)',
@@ -19,7 +19,7 @@ jQuery(document).ready(function($) {
                 attachment = attachment.toJSON();
                 var field = gallery.find('input');
                 field.val(field.val() + attachment.id + ';');
-                gallery.find('ul.wvg-gallery-images').append("<li data-id=\""+attachment.id+"\"><img src=" +attachment.sizes[size].url+ " /></li>");
+                gallery.find('ul.wvg-gallery-images').append("<li data-id=\""+attachment.id+"\"><img src=" +attachment.url+ " /></li>");
             });
             gallery.find('input').trigger('change');
         });

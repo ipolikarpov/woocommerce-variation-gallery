@@ -1,8 +1,13 @@
+div.options_group.wvg-gallery {
+	position: relative;
+}
+
 ul.wvg-gallery-images {
-	display: block;
+	display: inline-block;
 	float: left;
 	width: 100%;
 	clear: both;
+	margin-top: 0px;
 }
 
 ul.wvg-gallery-images li {
@@ -34,4 +39,10 @@ ul.wvg-gallery-images li:hover:after {
 	font-size: 20px;
 	text-align: center;
 	color: red;
+}
+
+div.options_group.wvg-gallery a.wvg-gallery-add-button {
+	position: absolute;
+	top: 0;
+	right: 0;
 }
