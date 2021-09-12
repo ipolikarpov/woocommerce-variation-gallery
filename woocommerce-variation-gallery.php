@@ -85,6 +85,97 @@ if ( !function_exists('wvg_save_variation_fields') ) {
 }
 
 //Frontend Part
+
+add_action( 'after_setup_theme', 'wvg_actions', 999 );
+
+function wvg_actions() {
+
+	// Main image
+	remove_action('woocommerce_before_single_product_summary', 'woocommerce_show_product_images', 20);
+	add_action('woocommerce_before_single_product_summary', 'wvg_woocommerce_show_product_images', 20);	
+
+	// Additional images
+	remove_action( 'woocommerce_product_thumbnails', 'woocommerce_show_product_thumbnails', 20 );
+	add_action( 'woocommerce_product_thumbnails', 'wvg_woocommerce_show_product_thumbnails', 20 );
+	
+}
+
+/*
+ * Replace main product image with default variation image if available
+ */
+
+function wvg_woocommerce_show_product_images() {
+	global $product;
+
+	if ($product->get_type() == 'variable') {
+		// error_log('[WVG] Main product is '.$product->get_sku());
+		$attributes = $product->get_default_attributes();
+
+		foreach ( $attributes as $key => $value ) {
+			if (strpos('attribute_', $key) == false) {
+				$attributes['attribute_'.$key] = $value;
+				unset($attributes[$key]);
+			}
+		}
+
+		// error_log('[WVG] Main product default attributes:');
+		// error_log(print_r($attributes, true));
+
+		// Try to get matching variation
+		$variatoins = $product->get_available_variations();
+		if ($variatoins) {
+			foreach ($variatoins as $variation) {
+				// error_log('[WVG] Variation '.$variation['variation_id'].' attributes:');
+				// error_log(print_r($variation['attributes'], true));
+				if ($variation['attributes'] === $attributes) {
+					// error_log('[WVG] FOUND MATCHING VARIATION :'.$variation['variation_id'].'.');
+					$parent_product = $product;
+					$product = wc_get_product($variation['variation_id']);
+					break;
+				}
+			}
+		}
+	}
+
+	wc_get_template( 'single-product/product-image.php' );
+	if (isset($parent_product)) $product = $parent_product;
+}
+
+/*
+ * Replace additiona product images with default varition additional images if available
+ */
+
+function wvg_woocommerce_show_product_thumbnails(){
+	global $product;
+
+	//error_log('[WVG] Trying to get additional images');
+
+	if ($product->get_type() == 'variation') {
+		// error_log('[WVG] Getting additional images for variation '.$product->get_sku());
+
+		if ($attachment_ids = get_post_meta($product->get_id(), '_wvg_gallery', true)) {
+			$attachment_ids = explode(';', $attachment_ids);
+			$attachment_ids = (array_filter($attachment_ids, fn($value) => !is_null($value) && $value !== ''));
+			// error_log('[WVG] Variation additional images ids are: ');
+			// error_log(print_r($attachment_ids, true));
+		} else {
+			$parent = $product->get_parent_id();
+			$parent = wc_get_product($parent);
+			$attachment_ids = $parent->get_gallery_image_ids();
+		}
+	} else {
+		$attachment_ids = $product->get_gallery_image_ids();
+	}
+	
+	if ( $attachment_ids ) {
+		foreach ( $attachment_ids as $attachment_id ) {
+			echo apply_filters( 'woocommerce_single_product_image_thumbnail_html', wc_get_gallery_image_html( $attachment_id ), $attachment_id ); // phpcs:disable WordPress.XSS.EscapeOutput.OutputNotEscaped
+		}
+	}
+
+}
+
+// Ajax action
 add_action( 'wp_ajax_wvg_change_images', 'wvg_change_images' );
 add_action( 'wp_ajax_nopriv_wvg_change_images', 'wvg_change_images' );
 if (!function_exists('wvg_change_images')) {
@@ -118,9 +209,12 @@ if (!function_exists('wvg_change_images')) {
 					}
 					if ( $gallery_ids ) {
 						foreach ( $gallery_ids as $gallery_id ) {
+
+							if ($gallery_id != '') {
+								echo apply_filters( 'woocommerce_single_product_image_thumbnail_html', wc_get_gallery_image_html( $gallery_id ), $gallery_id );
+								// phpcs:disable WordPress.XSS.EscapeOutput.OutputNotEscaped
+							}
 							
-							echo apply_filters( 'woocommerce_single_product_image_thumbnail_html', wc_get_gallery_image_html( $gallery_id ), $gallery_id );
-							// phpcs:disable WordPress.XSS.EscapeOutput.OutputNotEscaped
 						}
 					}
 					?>
